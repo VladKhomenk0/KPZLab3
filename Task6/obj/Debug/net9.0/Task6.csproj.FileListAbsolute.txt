@@ -1,0 +1,14 @@
+D:\JetBrain\KPZ\KPZLab3\Task6\bin\Debug\net9.0\Task6.exe
+D:\JetBrain\KPZ\KPZLab3\Task6\bin\Debug\net9.0\Task6.deps.json
+D:\JetBrain\KPZ\KPZLab3\Task6\bin\Debug\net9.0\Task6.runtimeconfig.json
+D:\JetBrain\KPZ\KPZLab3\Task6\bin\Debug\net9.0\Task6.dll
+D:\JetBrain\KPZ\KPZLab3\Task6\bin\Debug\net9.0\Task6.pdb
+D:\JetBrain\KPZ\KPZLab3\Task6\obj\Debug\net9.0\Task6.GeneratedMSBuildEditorConfig.editorconfig
+D:\JetBrain\KPZ\KPZLab3\Task6\obj\Debug\net9.0\Task6.AssemblyInfoInputs.cache
+D:\JetBrain\KPZ\KPZLab3\Task6\obj\Debug\net9.0\Task6.AssemblyInfo.cs
+D:\JetBrain\KPZ\KPZLab3\Task6\obj\Debug\net9.0\Task6.csproj.CoreCompileInputs.cache
+D:\JetBrain\KPZ\KPZLab3\Task6\obj\Debug\net9.0\Task6.dll
+D:\JetBrain\KPZ\KPZLab3\Task6\obj\Debug\net9.0\refint\Task6.dll
+D:\JetBrain\KPZ\KPZLab3\Task6\obj\Debug\net9.0\Task6.pdb
+D:\JetBrain\KPZ\KPZLab3\Task6\obj\Debug\net9.0\Task6.genruntimeconfig.cache
+D:\JetBrain\KPZ\KPZLab3\Task6\obj\Debug\net9.0\ref\Task6.dll

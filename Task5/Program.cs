@@ -5,11 +5,51 @@ using System.Text;
 
 namespace Task5
 {
-    // ШАБЛОННИЙ МЕТОД
+    // КОМАНДА
+    public interface ICommand
+    {
+        void Execute();
+        void Undo();
+    }
+
+    public class AddChildCommand : ICommand
+    {
+        private LightElementNode _parent;
+        private LightNode _child;
+
+        public AddChildCommand(LightElementNode parent, LightNode child)
+        {
+            _parent = parent;
+            _child = child;
+        }
+
+        public void Execute() => _parent.Children.Add(_child);
+        public void Undo() => _parent.Children.Remove(_child);
+    }
+
+    public class HtmlEditor
+    {
+        private Stack<ICommand> _history = new Stack<ICommand>();
+
+        public void ExecuteCommand(ICommand command)
+        {
+            command.Execute();
+            _history.Push(command);
+        }
+
+        public void Undo()
+        {
+            if (_history.Count > 0)
+            {
+                Console.WriteLine("[Undo] Скасування останньої дії...");
+                _history.Pop().Undo();
+            }
+        }
+    }
+
     public abstract class LightNode
     {
         public abstract string InnerHTML { get; }
-        
         public string Render()
         {
             OnCreated();
@@ -17,13 +57,10 @@ namespace Task5
             OnRendered();
             return html;
         }
-
-        // Хуки
-        protected virtual void OnCreated() { Console.WriteLine($"[{this.GetType().Name}] створено."); }
-        protected virtual void OnRendered() { Console.WriteLine($"[{this.GetType().Name}] відрендерено."); }
-        
+        protected virtual void OnCreated() { }
+        protected virtual void OnRendered() { }
         protected abstract string GetOuterHtmlCore();
-        public string OuterHTML => Render();
+        public string OuterHTML => Render(); 
     }
 
     public class LightTextNode : LightNode
@@ -50,19 +87,6 @@ namespace Task5
             if (cssClasses != null) CssClasses = cssClasses;
         }
 
-        public void AddChild(LightNode node) { Children.Add(node); }
-
-        public override string InnerHTML
-        {
-            get
-            {
-                StringBuilder sb = new StringBuilder();
-                foreach (var child in Children) sb.Append(child.OuterHTML);
-                return sb.ToString();
-            }
-        }
-
-        // Реалізація генерації розмітки для шаблонного методу
         protected override string GetOuterHtmlCore()
         {
             StringBuilder sb = new StringBuilder();
@@ -77,54 +101,15 @@ namespace Task5
             return sb.ToString();
         }
 
-        public IEnumerable<LightNode> GetDepthFirst()
+        public override string InnerHTML
         {
-            var iterator = new DepthFirstIterator(this);
-            while (iterator.MoveNext()) yield return iterator.Current;
+            get
+            {
+                StringBuilder sb = new StringBuilder();
+                foreach (var child in Children) sb.Append(child.OuterHTML);
+                return sb.ToString();
+            }
         }
-        public IEnumerable<LightNode> GetBreadthFirst()
-        {
-            var iterator = new BreadthFirstIterator(this);
-            while (iterator.MoveNext()) yield return iterator.Current;
-        }
-    }
-
-    public class DepthFirstIterator : IEnumerator<LightNode>
-    {
-        private Stack<LightNode> _stack = new Stack<LightNode>();
-        private LightNode _current;
-        public DepthFirstIterator(LightNode root) { _stack.Push(root); }
-        public LightNode Current => _current;
-        object IEnumerator.Current => Current;
-        public bool MoveNext()
-        {
-            if (_stack.Count == 0) return false;
-            _current = _stack.Pop();
-            if (_current is LightElementNode elementNode)
-                for (int i = elementNode.Children.Count - 1; i >= 0; i--) _stack.Push(elementNode.Children[i]);
-            return true;
-        }
-        public void Reset() => throw new NotSupportedException();
-        public void Dispose() { }
-    }
-
-    public class BreadthFirstIterator : IEnumerator<LightNode>
-    {
-        private Queue<LightNode> _queue = new Queue<LightNode>();
-        private LightNode _current;
-        public BreadthFirstIterator(LightNode root) { _queue.Enqueue(root); }
-        public LightNode Current => _current;
-        object IEnumerator.Current => Current;
-        public bool MoveNext()
-        {
-            if (_queue.Count == 0) return false;
-            _current = _queue.Dequeue();
-            if (_current is LightElementNode elementNode)
-                foreach (var child in elementNode.Children) _queue.Enqueue(child);
-            return true;
-        }
-        public void Reset() => throw new NotSupportedException();
-        public void Dispose() { }
     }
 
     class Program
@@ -132,14 +117,26 @@ namespace Task5
         static void Main(string[] args)
         {
             Console.OutputEncoding = Encoding.UTF8;
-            Console.WriteLine("Шаблонний метод\n");
+            Console.WriteLine("Команда\n");
             
+            var editor = new HtmlEditor();
             var div = new LightElementNode("div", "block", "double");
             var h1 = new LightElementNode("h1", "block", "double");
-            h1.AddChild(new LightTextNode("Hello!"));
-            div.AddChild(h1);
+            var p = new LightElementNode("p", "block", "double");
+            
+            p.Children.Add(new LightTextNode("Помилковий текст"));
+            
+            Console.WriteLine("Виконуємо команди:");
+            editor.ExecuteCommand(new AddChildCommand(div, h1));
+            editor.ExecuteCommand(new AddChildCommand(div, p));
+            
+            Console.WriteLine("\nHTML до скасування:");
+            Console.WriteLine(div.OuterHTML);
 
-            Console.WriteLine("\nВиклик рендеру (з хуками)");
+            Console.WriteLine("\nСкасовуємо останню дію (додавання <p>):");
+            editor.Undo();
+
+            Console.WriteLine("\nHTML після скасування:");
             Console.WriteLine(div.OuterHTML);
         }
     }

@@ -4,70 +4,72 @@ using System.Text;
 
 namespace Task5
 {
-    // СТЕЙТ
-    public interface INodeState
+    // ВІДВІДУВАЧ
+    public interface ILightNodeVisitor
     {
-        string GetHtml(LightElementNode node, string originalHtml);
+        void Visit(LightElementNode element);
+        void Visit(LightTextNode text);
     }
 
-    public class VisibleState : INodeState
+    public class TextExtractorVisitor : ILightNodeVisitor
     {
-        public string GetHtml(LightElementNode node, string originalHtml) => originalHtml;
-    }
+        public StringBuilder ExtractedText { get; } = new StringBuilder();
 
-    public class HiddenState : INodeState
-    {
-        public string GetHtml(LightElementNode node, string originalHtml) 
-            => $"";
+        public void Visit(LightElementNode element)
+        {
+            foreach (var child in element.Children)
+                child.Accept(this);
+        }
+
+        public void Visit(LightTextNode text)
+        {
+            ExtractedText.Append(text.InnerHTML + " ");
+        }
     }
 
     public abstract class LightNode
     {
         public abstract string InnerHTML { get; }
-        public string Render()
-        {
-            return GetOuterHtmlCore();
-        }
-        protected abstract string GetOuterHtmlCore();
-        public string OuterHTML => Render(); 
+        public abstract string OuterHTML { get; }
+        
+        public abstract void Accept(ILightNodeVisitor visitor);
     }
 
     public class LightTextNode : LightNode
     {
         private string _text;
         public LightTextNode(string text) { _text = text; }
-        protected override string GetOuterHtmlCore() => _text;
+        public override string OuterHTML => _text;
         public override string InnerHTML => _text;
+        
+        public override void Accept(ILightNodeVisitor visitor) => visitor.Visit(this);
     }
 
     public class LightElementNode : LightNode
     {
         public string TagName { get; }
-        public string DisplayType { get; }
         public string ClosingType { get; }
-        public List<string> CssClasses { get; } = new List<string>();
         public List<LightNode> Children { get; } = new List<LightNode>();
-        
-        // Змінна стану
-        public INodeState State { get; set; } = new VisibleState();
 
-        public LightElementNode(string tagName, string displayType, string closingType)
+        public LightElementNode(string tagName, string closingType)
         {
             TagName = tagName;
-            DisplayType = displayType;
             ClosingType = closingType;
         }
 
-        protected override string GetOuterHtmlCore()
+        public override string OuterHTML
         {
-            StringBuilder sb = new StringBuilder();
-            sb.Append($"<{TagName}>");
-            if (ClosingType != "single")
+            get
             {
-                sb.Append(InnerHTML);
-                sb.Append($"</{TagName}>");
+                StringBuilder sb = new StringBuilder();
+                sb.Append($"<{TagName}>");
+                if (ClosingType != "single")
+                {
+                    sb.Append(InnerHTML);
+                    sb.Append($"</{TagName}>");
+                }
+                return sb.ToString();
             }
-            return State.GetHtml(this, sb.ToString());
         }
 
         public override string InnerHTML
@@ -79,6 +81,8 @@ namespace Task5
                 return sb.ToString();
             }
         }
+
+        public override void Accept(ILightNodeVisitor visitor) => visitor.Visit(this);
     }
 
     class Program
@@ -86,22 +90,30 @@ namespace Task5
         static void Main(string[] args)
         {
             Console.OutputEncoding = Encoding.UTF8;
-            Console.WriteLine("Стейт\n");
+            Console.WriteLine("Відвідувач\n");
             
-            var div = new LightElementNode("div", "block", "double");
+            var div = new LightElementNode("div", "double");
+            var h1 = new LightElementNode("h1", "double");
+            h1.Children.Add(new LightTextNode("Заголовок сайту."));
+            
+            var p = new LightElementNode("p", "double");
+            p.Children.Add(new LightTextNode("Опис компанії та"));
+            
+            var span = new LightElementNode("span", "double");
+            span.Children.Add(new LightTextNode("важливі деталі."));
+            p.Children.Add(span);
 
-            var h1 = new LightElementNode("h1", "block", "double");
-            h1.Children.Add(new LightTextNode("Я видимий заголовок"));
-            
-            var secret = new LightElementNode("span", "inline", "double");
-            secret.Children.Add(new LightTextNode("Секретний текст"));
-            secret.State = new HiddenState(); // Зміна стану
-            
             div.Children.Add(h1);
-            div.Children.Add(secret);
+            div.Children.Add(p);
 
-            Console.WriteLine("Генерація HTML:");
+            Console.WriteLine("Оригінальний HTML");
             Console.WriteLine(div.OuterHTML);
+
+            Console.WriteLine("\nЕкстракція тексту (Visitor)");
+            var visitor = new TextExtractorVisitor();
+            div.Accept(visitor);
+            
+            Console.WriteLine(visitor.ExtractedText.ToString().Trim());
         }
     }
 }

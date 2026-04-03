@@ -1,50 +1,24 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 
 namespace Task5
 {
-    // КОМАНДА
-    public interface ICommand
+    // СТЕЙТ
+    public interface INodeState
     {
-        void Execute();
-        void Undo();
+        string GetHtml(LightElementNode node, string originalHtml);
     }
 
-    public class AddChildCommand : ICommand
+    public class VisibleState : INodeState
     {
-        private LightElementNode _parent;
-        private LightNode _child;
-
-        public AddChildCommand(LightElementNode parent, LightNode child)
-        {
-            _parent = parent;
-            _child = child;
-        }
-
-        public void Execute() => _parent.Children.Add(_child);
-        public void Undo() => _parent.Children.Remove(_child);
+        public string GetHtml(LightElementNode node, string originalHtml) => originalHtml;
     }
 
-    public class HtmlEditor
+    public class HiddenState : INodeState
     {
-        private Stack<ICommand> _history = new Stack<ICommand>();
-
-        public void ExecuteCommand(ICommand command)
-        {
-            command.Execute();
-            _history.Push(command);
-        }
-
-        public void Undo()
-        {
-            if (_history.Count > 0)
-            {
-                Console.WriteLine("[Undo] Скасування останньої дії...");
-                _history.Pop().Undo();
-            }
-        }
+        public string GetHtml(LightElementNode node, string originalHtml) 
+            => $"";
     }
 
     public abstract class LightNode
@@ -52,13 +26,8 @@ namespace Task5
         public abstract string InnerHTML { get; }
         public string Render()
         {
-            OnCreated();
-            string html = GetOuterHtmlCore();
-            OnRendered();
-            return html;
+            return GetOuterHtmlCore();
         }
-        protected virtual void OnCreated() { }
-        protected virtual void OnRendered() { }
         protected abstract string GetOuterHtmlCore();
         public string OuterHTML => Render(); 
     }
@@ -78,27 +47,27 @@ namespace Task5
         public string ClosingType { get; }
         public List<string> CssClasses { get; } = new List<string>();
         public List<LightNode> Children { get; } = new List<LightNode>();
+        
+        // Змінна стану
+        public INodeState State { get; set; } = new VisibleState();
 
-        public LightElementNode(string tagName, string displayType, string closingType, List<string> cssClasses = null)
+        public LightElementNode(string tagName, string displayType, string closingType)
         {
             TagName = tagName;
             DisplayType = displayType;
             ClosingType = closingType;
-            if (cssClasses != null) CssClasses = cssClasses;
         }
 
         protected override string GetOuterHtmlCore()
         {
             StringBuilder sb = new StringBuilder();
-            sb.Append($"<{TagName}");
-            if (CssClasses.Count > 0) sb.Append($" class=\"{string.Join(" ", CssClasses)}\"");
-            sb.Append(">");
+            sb.Append($"<{TagName}>");
             if (ClosingType != "single")
             {
                 sb.Append(InnerHTML);
                 sb.Append($"</{TagName}>");
             }
-            return sb.ToString();
+            return State.GetHtml(this, sb.ToString());
         }
 
         public override string InnerHTML
@@ -117,26 +86,21 @@ namespace Task5
         static void Main(string[] args)
         {
             Console.OutputEncoding = Encoding.UTF8;
-            Console.WriteLine("Команда\n");
+            Console.WriteLine("Стейт\n");
             
-            var editor = new HtmlEditor();
             var div = new LightElementNode("div", "block", "double");
+
             var h1 = new LightElementNode("h1", "block", "double");
-            var p = new LightElementNode("p", "block", "double");
+            h1.Children.Add(new LightTextNode("Я видимий заголовок"));
             
-            p.Children.Add(new LightTextNode("Помилковий текст"));
+            var secret = new LightElementNode("span", "inline", "double");
+            secret.Children.Add(new LightTextNode("Секретний текст"));
+            secret.State = new HiddenState(); // Зміна стану
             
-            Console.WriteLine("Виконуємо команди:");
-            editor.ExecuteCommand(new AddChildCommand(div, h1));
-            editor.ExecuteCommand(new AddChildCommand(div, p));
-            
-            Console.WriteLine("\nHTML до скасування:");
-            Console.WriteLine(div.OuterHTML);
+            div.Children.Add(h1);
+            div.Children.Add(secret);
 
-            Console.WriteLine("\nСкасовуємо останню дію (додавання <p>):");
-            editor.Undo();
-
-            Console.WriteLine("\nHTML після скасування:");
+            Console.WriteLine("Генерація HTML:");
             Console.WriteLine(div.OuterHTML);
         }
     }

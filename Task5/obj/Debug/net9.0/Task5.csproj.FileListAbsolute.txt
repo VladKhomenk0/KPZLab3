@@ -12,3 +12,4 @@ D:\JetBrain\KPZ\KPZLab3\Task5\obj\Debug\net9.0\refint\Task5.dll
 D:\JetBrain\KPZ\KPZLab3\Task5\obj\Debug\net9.0\Task5.pdb
 D:\JetBrain\KPZ\KPZLab3\Task5\obj\Debug\net9.0\Task5.genruntimeconfig.cache
 D:\JetBrain\KPZ\KPZLab3\Task5\obj\Debug\net9.0\ref\Task5.dll
+D:\JetBrain\KPZ\KPZLab3\Task5\obj\Debug\net9.0\Task5.sourcelink.json
